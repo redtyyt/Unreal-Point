@@ -2,6 +2,7 @@ import subprocess
 import os
 from tkinter import messagebox
 import tkinter as tk
+import tkinter.filedialog as fd
 
 # Funzione per eseguire comandi shell
 def run_command(command):
@@ -158,7 +159,7 @@ def check_isalreadyconfigured_azure():
 
 def toggle_fullscreen(event=None):
     global is_fullscreen
-    is_fullscreen = not is_fullscreen  # Cambia lo stato della variabile
+    is_fullscreen = True  # Cambia lo stato della variabile
     root.attributes("-fullscreen", is_fullscreen)
 
 def exit_fullscreen(event=None):
@@ -166,13 +167,43 @@ def exit_fullscreen(event=None):
     is_fullscreen = False
     root.attributes("-fullscreen", False)
 
+def get_commits():
+    local_path = path_entry.get()
+    if not is_git_repo(local_path):
+        messagebox.showerror("Error", "The specified path is not a valid Git repository.")
+        return None
+    
+    os.chdir(local_path)
+    try:
+        output = run_command(r"git log -n 5 --pretty=format: '%h - %an, %ar : %s'")
+        return output
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+def is_git_repo(path):
+    """Verify if the path is a Git repo"""
+    if not os.path.exists(path=path):
+        return False
+    original_dir = os.getcwd()
+    os.chdir(path=path)
+    result = run_command("git rev-parse --is-inside-work-tree")
+    os.chdir(original_dir)
+    return result == "true"
+
+def browse_path():
+    selected_path = fd.askdirectory()
+    if selected_path:
+        path_entry.delete(0, tk.END)
+        path_entry.insert(0, selected_path)
+
 # Configurazione della finestra principale
 root = tk.Tk()
 root.title("Unreal Point 0.0.1")
-root.geometry("500x400")
+root.geometry("1280x720")
 
-is_fullscreen = True
-root.attributes("-fullscreen", True)
+is_fullscreen = False
+root.attributes("-fullscreen", False)
 
 # Associa il tasto F per alternare la modalità full screen
 root.bind("<F>", toggle_fullscreen)
@@ -180,6 +211,7 @@ root.bind("<F>", toggle_fullscreen)
 # Associa il tasto Esc per uscire dal full screen
 root.bind("<Escape>", exit_fullscreen)
 
+tk.Label(root, text="Unreal Point 0.0.2", font="TkDefaultFont 44").pack(pady=5)
 
 # Etichetta e campo per il repository URL
 tk.Label(root, text="Repository URL").pack(pady=5)
@@ -189,7 +221,10 @@ repo_entry.pack(pady=5)
 # Etichetta e campo per il percorso locale
 tk.Label(root, text="Local path").pack(pady=5)
 path_entry = tk.Entry(root, width=60)
-path_entry.pack(pady=5)
+path_entry.pack(side=tk.LEFT, padx=5)
+
+browse_button = tk.Button(root, text="Browse", command=browse_path)
+browse_button.pack(side=tk.LEFT, padx=5)
 
 # Pulsante per clonare il repository
 clone_button = tk.Button(root, text="Clone/Pull", command=clone_repo)
@@ -207,6 +242,25 @@ commit_button.pack(pady=10)
 # Pulsante per caricare dati salvati
 load_button = tk.Button(root, text="Load saved data", command=load_data)
 load_button.pack(pady=10)
+
+tk.Label(root, text="-----------------------------").pack(pady=10)
+
+tk.Label(root, text="Recent commits", font="TkDefaultFont 44").pack(pady=5)
+
+comm1Label = tk.Label(root, text="")
+
+recent_commits = get_commits()
+if repo_entry:
+    if recent_commits:
+        comm1Label.config(text=recent_commits)
+    else:
+        comm1Label.config(text="No commits found")
+
+tk.Label(root, text="-----------------------------").pack(pady=10)
+
+# Info 1 Label
+if is_fullscreen:
+    tk.Label(root, text="Click Esc to exit fullscreen").pack(pady=5)
 
 # Verifica e crea la cartella "saved" se non esiste
 if not os.path.exists('saved'):
