@@ -111,12 +111,6 @@ def clone_repo():
         os.chdir(local_path)
         output = run_command("git pull")
         messagebox.showinfo("Pull", output)
-    
-    # Salva i dati nei file
-    with open('saved/repo.txt', 'w') as file:
-        file.write(repo_url)
-    with open('saved/localpath.txt', 'w') as file:
-        file.write(local_path)
 
 # Funzione per il commit e push
 def commit_and_push():
@@ -135,7 +129,7 @@ def commit_and_push():
     messagebox.showinfo("Push", output)
 
 # Carica dati salvati
-def load_data():
+def load_data(useRes:bool):
     try:
         with open('saved/repo.txt', 'r') as file:
             repo_entry.delete(0, tk.END)
@@ -144,7 +138,10 @@ def load_data():
             path_entry.delete(0, tk.END)
             path_entry.insert(0, file.read().strip())
     except FileNotFoundError:
-        messagebox.showinfo("Info", "No saved data found.")
+        if useRes:
+            messagebox.showinfo("Info", "No saved data found.")
+        else:
+            pass
 
 def check_isalreadyconfigured_azure():
     stdout = run_command("az account show")
@@ -172,10 +169,11 @@ def get_commits():
     if not is_git_repo(local_path):
         messagebox.showerror("Error", "The specified path is not a valid Git repository.")
         return None
-    
+
     os.chdir(local_path)
     try:
-        output = run_command(r"git log -n 5 --pretty=format: '%h - %an, %ar : %s'")
+        output = run_command('git log -n 5 --pretty=format:"%h - %an, %ar : %s"')
+        print(f"Git log output: {output}")  # Debug: stampa l'output per verificare se il comando funziona
         return output
     except Exception as e:
         print(f"Error: {e}")
@@ -197,6 +195,35 @@ def browse_path():
         path_entry.delete(0, tk.END)
         path_entry.insert(0, selected_path)
 
+def create_comm_viewer():
+    global commit_text
+
+    commit_frame = tk.Frame(root)
+    commit_frame.pack(expand=False)
+
+    scrollbar = tk.Scrollbar(commit_frame)
+    scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+
+    commit_text = tk.Text(commit_frame, wrap=tk.WORD, yscrollcommand=scrollbar.set, font="TkDefaultFont 12", spacing3=10)
+    commit_text.pack(fill=tk.BOTH, expand=True)
+
+    scrollbar.config(command=commit_text.yview)
+
+    return commit_text
+
+def display_commits():
+    recent_commits = get_commits()
+
+    commit_text.config(state=tk.NORMAL)
+    if recent_commits:
+        commit_text.delete(1.0, tk.END)
+        for commit in recent_commits.splitlines():
+            commit_text.insert(tk.END, commit + "\n")
+    else:
+        commit_text.insert(tk.END, "No commits found!")
+
+    commit_text.config(state=tk.DISABLED)
+
 # Configurazione della finestra principale
 root = tk.Tk()
 root.title("Unreal Point 0.0.1")
@@ -213,18 +240,28 @@ root.bind("<Escape>", exit_fullscreen)
 
 tk.Label(root, text="Unreal Point 0.0.2", font="TkDefaultFont 44").pack(pady=5)
 
+def save_data_persistent():
+    repo_url = repo_entry.get()
+    local_path = path_entry.get()
+
+    with open('saved/repo.txt', 'w') as file:
+        file.write(repo_url)
+    with open('saved/localpath.txt', 'w') as file:
+        file.write(local_path)
+
 # Etichetta e campo per il repository URL
-tk.Label(root, text="Repository URL").pack(pady=5)
+tk.Label(root, text="Repository URL (Optional)").pack(pady=5)
 repo_entry = tk.Entry(root, width=60)
 repo_entry.pack(pady=5)
 
-# Etichetta e campo per il percorso locale
-tk.Label(root, text="Local path").pack(pady=5)
 path_entry = tk.Entry(root, width=60)
-path_entry.pack(side=tk.LEFT, padx=5)
+path_entry.pack(pady=5)
 
 browse_button = tk.Button(root, text="Browse", command=browse_path)
-browse_button.pack(side=tk.LEFT, padx=5)
+browse_button.pack(pady=5)
+
+save_data_b = tk.Button(root, text="Save data", command=save_data_persistent)
+save_data_b.pack(pady=5)
 
 # Pulsante per clonare il repository
 clone_button = tk.Button(root, text="Clone/Pull", command=clone_repo)
@@ -240,21 +277,17 @@ commit_button = tk.Button(root, text="Commit and Push", command=commit_and_push)
 commit_button.pack(pady=10)
 
 # Pulsante per caricare dati salvati
-load_button = tk.Button(root, text="Load saved data", command=load_data)
+load_button = tk.Button(root, text="Load saved data", command=lambda: load_data(useRes=True))
 load_button.pack(pady=10)
+load_data(useRes=False)
 
 tk.Label(root, text="-----------------------------").pack(pady=10)
 
 tk.Label(root, text="Recent commits", font="TkDefaultFont 44").pack(pady=5)
 
-comm1Label = tk.Label(root, text="")
+tk.Button(root, text="Search commits", command=display_commits).pack(pady=10)
 
-recent_commits = get_commits()
-if repo_entry:
-    if recent_commits:
-        comm1Label.config(text=recent_commits)
-    else:
-        comm1Label.config(text="No commits found")
+commit_text = create_comm_viewer()
 
 tk.Label(root, text="-----------------------------").pack(pady=10)
 
