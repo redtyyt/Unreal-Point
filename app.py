@@ -1,5 +1,6 @@
 import subprocess
 import os
+import upd
 from tkinter import messagebox
 import tkinter as tk
 import tkinter.filedialog as fd
@@ -29,9 +30,14 @@ def install_az_cli():
     except Exception as e:
         messagebox.showerror("Error", f"ERROR! {e}")
 
+def update_task():
+    upd
+
 # Funzione per verificare se Azure DevOps è configurato e aprire la finestra di setup se necessario
 def start_setup():
     global pat_entry, org_url_entry, setup  # Definisci le variabili globali
+
+    update_task()
 
     # Controlla se Azure DevOps è già configurato
     try:
@@ -227,7 +233,7 @@ def display_commits():
 # Configurazione della finestra principale
 root = tk.Tk()
 root.title("Unreal Point 0.0.1")
-root.geometry("1280x720")
+root.geometry("1300x800")
 
 is_fullscreen = False
 root.attributes("-fullscreen", False)
@@ -288,6 +294,8 @@ tk.Label(root, text="Recent commits", font="TkDefaultFont 44").pack(pady=5)
 tk.Button(root, text="Search commits", command=display_commits).pack(pady=10)
 
 commit_text = create_comm_viewer()
+
+display_commits()
 
 tk.Label(root, text="-----------------------------").pack(pady=10)
 

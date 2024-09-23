@@ -1,10 +1,10 @@
 # UNREAL POINT
 
-Unreal Point is a brand new application that allows yall to collab with your team on Unreal Engine.
+Unreal Point is a brand new application that allows everyone to collab with his team on Unreal Engine.
 
 ## What does it use?
 
-Unreal Point uses **python** and **Azure DevOps**. 
+Unreal Point uses **python** and **Azure DevOps**.
 
 ## Warning!
 
