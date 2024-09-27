@@ -36,24 +36,35 @@ def update():
 
     if remote_version is None:
         messagebox.showerror("Error", "Error during the update check")
+        exit(1)
+        return
+    if local_version is None:
+        messagebox.showerror("Error", "Error during the update check")
+        exit(1)
         return
     
     if remote_version == local_version:
         pass
+    elif local_version is None:
+        messagebox.showerror("Update", "What? The version file doesn't exists, pls reinstall")
     else:
         messagebox.showinfo("Update", f"New version downloading : {remote_version}. Current version : {local_version}")
         try:
-            response = requests.get(DOWNLOAD_URL_BASE + remote_version + "/Unreal.Point.exe", stream=True)
+            response = requests.get(DOWNLOAD_URL_BASE + remote_version + "/Unreal-Point.exe", stream=True)
             with open("Unreal-Point.exe", "wb") as f:
                 shutil.copyfileobj(response.raw, f)
                 delete_ancient_file(file=LOCAL_EXE_FILE)
+                print("Old version removed!")
                 change_local_version()
                 messagebox.showwarning("Update", "Please reopen the application downloaded.")
                 exit(code=0)
+                return print("Finished Update!")
         except Exception as e:
-            messagebox.showerror("Error", "Error during the update")
+            messagebox.showerror("Error", f"Error during the update: {e}. I didn't think that this can happen... Please report this as an issue on github.")
+            exit(1)
         except requests.RequestException as e:
             messagebox.showerror("Error", f"Error during the update: {e}")
+            exit(1)
 
 def delete_ancient_file(file):
     """
@@ -62,6 +73,8 @@ def delete_ancient_file(file):
 
     if os.path.exists(file):
         os.remove(file)
+    else:
+        print(f"The file {file} does not exist")
 
 def change_local_version():
     """
@@ -72,6 +85,13 @@ def change_local_version():
 
     with open(LOCAL_VERSION_FILE, "w") as f:
         f.write(remote_version)
+
+
+if os.path.exists(LOCAL_VERSION_FILE):
+    print("The path exists")
+else:
+    messagebox.showerror("Error", "Local file doesn't exist, reinstall the app.")
+    exit(1)
 
 
 def check_updates():

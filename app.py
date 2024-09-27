@@ -1,9 +1,9 @@
 import subprocess
 import os
-import upd
 from tkinter import messagebox
 import tkinter as tk
 import tkinter.filedialog as fd
+import time
 
 # Funzione per eseguire comandi shell
 def run_command(command):
@@ -31,11 +31,13 @@ def install_az_cli():
         messagebox.showerror("Error", f"ERROR! {e}")
 
 def update_task():
-    upd
+    import upd
 
 # Funzione per verificare se Azure DevOps è configurato e aprire la finestra di setup se necessario
 def start_setup():
     global pat_entry, org_url_entry, setup  # Definisci le variabili globali
+
+    time.sleep(3)
 
     update_task()
 
@@ -172,11 +174,13 @@ def exit_fullscreen(event=None):
 
 def get_commits():
     local_path = path_entry.get()
-    if not is_git_repo(local_path):
-        messagebox.showerror("Error", "The specified path is not a valid Git repository.")
-        return None
-
-    os.chdir(local_path)
+    local_path_use = path_entry
+    if not verify_is_empty(local_path_use):
+        if not is_git_repo(local_path):
+            messagebox.showerror("Error", "The specified path is not a valid Git repository.")
+            return None
+        else:
+            os.chdir(local_path)
     try:
         output = run_command('git log -n 5 --pretty=format:"%h - %an, %ar : %s"')
         print(f"Git log output: {output}")  # Debug: stampa l'output per verificare se il comando funziona
@@ -193,7 +197,7 @@ def is_git_repo(path):
     os.chdir(path=path)
     result = run_command("git rev-parse --is-inside-work-tree")
     os.chdir(original_dir)
-    return result == "true"
+    return True
 
 def browse_path():
     selected_path = fd.askdirectory()
@@ -230,9 +234,18 @@ def display_commits():
 
     commit_text.config(state=tk.DISABLED)
 
+def verify_is_empty(content: tk.Entry):
+    if content.get() == "":
+        return True
+    elif not content.get():
+        return True
+    elif content.getint(s=7) >= 7:
+        print("Content!")
+        return False
+
 # Configurazione della finestra principale
 root = tk.Tk()
-root.title("Unreal Point 0.0.1")
+root.title("Unreal Point 0.0.3")
 root.geometry("1300x800")
 
 is_fullscreen = False
@@ -244,7 +257,7 @@ root.bind("<F>", toggle_fullscreen)
 # Associa il tasto Esc per uscire dal full screen
 root.bind("<Escape>", exit_fullscreen)
 
-tk.Label(root, text="Unreal Point 0.0.2", font="TkDefaultFont 44").pack(pady=5)
+tk.Label(root, text="Unreal Point 0.0.3", font="TkDefaultFont 44").pack(pady=5)
 
 def save_data_persistent():
     repo_url = repo_entry.get()
@@ -320,6 +333,9 @@ if not os.path.exists('saved/important/bool.cli.azure_configured.txt'):
             file.write("False")
         else:
             file.write("True")
+if not os.path.exists("saved/important/version.txt"):
+        with open("saved/important/version.txt", "w") as f:
+            f.write("0.0.3")
 
 # Verifica l'installazione di Azure CLI e avvia la configurazione
 start_setup()
